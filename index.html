@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #343a40; /* Dark background color */
+            color: #ffffff; /* Light text color */
+            margin: 0;
+            display: flex;
+        }
+ 
+        nav {
+            background-color: #454d55; /* Dark background color for the table */
+            padding: 10px;
+            text-align: center;
+            width: 120px;
+            height: 100%;
+        }
+         
+        nav a {
+            display: block;
+            color: #ffffff; /* Light text color for tabs */
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 10px;
+            margin-bottom: 10px; /* Added margin to create spacing between tabs */
+            transition: background-color 0.3s ease;
+        }
+         
+        nav a:hover {
+            background-color: #495057; /* Dark grey - Hover */
+        }
+
+        main {
+            margin-left: 20px; /* Adjust to match the width of the sidebar */
+            flex: 1; /* Use remaining space in the flex container */
+            padding: 20px;
+            text-align: center;
+        }
+ 
+        h1 {
+            margin-left: 80px;
+            width: 80%;
+            color: #ffffff; /* Light text color for headings */
+            margin-bottom: 20px;
+        }
+ 
+        table {
+            width: auto;
+            max-width: 100%;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1); /* Light shadow for the table */
+            background-color: #454d55; /* Dark background color for the table */
+            border-radius: 8px;
+            overflow: hidden;
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
+ 
+        th, td {
+            border: 1px solid #6c757d; /* Medium border color */
+            padding: 8px;
+            text-align: left;
+            font-size: 14px;
+        }
+ 
+        th {
+            text-align: center;
+            background-color: #007bff; /* Primary color for table headers */
+            color: #ffffff; /* Light text color for table headers */
+        }
+ 
+        select, input {
+            width: calc(100% - 16px);
+            padding: 8px;
+            border: 1px solid #495057; /* Dark border color for input fields */
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+ 
+        button {
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: #495057; /* Dark grey for buttons */
+            color: #ffffff; /* Light text color for buttons */
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-right: 10px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+ 
+        button[disabled] {
+            cursor: not-allowed;
+        }
+ 
+        button i {
+            margin-right: 5px;
+        }
+ 
+        button:hover {
+            background-color: #e2e6ea; /* Light grey - Hover */
+        }
+ 
+        button:active {
+            background-color: #d6d8db; /* Light grey - Active */
+        }
+ 
+        button[disabled]:hover {
+            background-color: #f8f9fa; /* Light grey */
+        }
+ 
+        button[disabled]:active {
+            background-color: #f8f9fa; /* Light grey */
+        }
+ 
+        button.delete {
+            background-color: #dc3545;
+            color: white;
+        }
+ 
+        button.delete:hover {
+            background-color: #c82333;
+        }
+ 
+        button.delete:active {
+            background-color: #bd2130;
+        }
+ 
+        button.delete[disabled]:hover {
+            background-color: #dc3545;
+        }
+ 
+        button.delete[disabled]:active {
+            background-color: #dc3545;
+        }
+    </style>
+    <title>Data Editor</title>
+</head>
+<body>
+    <nav>
+        <!-- Z Income -->
+        <a href="{{ url_for('tab', tab_name='ZachIncome') }}">Z Income</a>
+        <!-- M Income -->
+        <a href="{{ url_for('tab', tab_name='MarynIncome') }}">M Income</a>
+        <!-- Savings Amounts -->
+        <a href="{{ url_for('tab', tab_name='SavingTargets') }}">Saving Targets</a>
+        <!-- Spending Amounts -->
+        <a href="{{ url_for('tab', tab_name='SpendingTargets') }}">Spending Targets</a>
+        <!-- Spending transactions -->
+        <a href="{{ url_for('tab', tab_name='Spending') }}">Spending</a>
+        <!-- Accounts Snapshots -->
+    </nav>
+    <main>
+        <h1>Data Editor - {{ tab_name }}</h1>
+        <form action="{{ url_for('edit', tab_name=tab_name) }}" method="post" id="data-form">
+            <table border="1" id="data-table">
+                <tr>
+                    {% for col in data.columns %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                    <th>Action</th>
+                </tr>
+                {% for index, row in data.iterrows() %}
+                    <tr>
+                        {% for col in data.columns %}
+                            <td><input type="text" name="{{ col }}" value="{{ row[col] }}"></td>
+                        {% endfor %}
+                        <td>
+                            <button type="button" onclick="addRowAfter(this)"><i class="fas fa-plus"></i></button> <!--Plus Icon-->
+                            <button type="button" onclick="deleteRow(this)"><i class="fas fa-trash-alt"></i></button> <!--Garbage Icon-->
+                            <button type="button" onclick="moveRowUp(this)"><i class="fas fa-caret-up"></i></button>
+                            <button type="button" onclick="moveRowDown(this)"><i class="fas fa-caret-down"></i></button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+            <button type="submit">Save Changes</button>
+        </form>
+    </main>
+ 
+    <script>
+        function addRowAfter(button) {
+            var row = button.parentNode.parentNode;
+            var newRow = row.cloneNode(true);
+ 
+            for (var i = 0; i < newRow.cells.length; i++) {
+                var cell = newRow.cells[i];
+                if (cell.firstChild.tagName === 'INPUT') {
+                    cell.firstChild.value = '';  // Clear input values for the new row
+                }
+            } 
+            row.parentNode.insertBefore(newRow, row.nextSibling);
+        }
+
+        function deleteRow(button) {
+            var row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        }
+
+        function moveRowUp(button) {
+            var row = button.parentNode.parentNode;
+            var previousRow = row.previousElementSibling;
+ 
+            if (previousRow && ! previousRow.querySelector('th')) {
+                row.parentNode.insertBefore(row, previousRow);
+            }
+        }
+
+        function moveRowDown(button) {
+            var row = button.parentNode.parentNode;
+            var nextRow = row.nextElementSibling;
+
+            if(nextRow){
+                row.parentNode.insertBefore(nextRow, row);
+            }
+
+        }
+    </script>
+</body>
+</html>
